@@ -1,11 +1,15 @@
 import requests
 import os
 import discord
+from discord.ext import commands
 from dotenv import load_dotenv
 
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!',intents=intents)
 load_dotenv()
-
-def get_roster():
+    
+def get_roster(last_msg):
     headers = { 
         "accept": "application/json", 
         "Authorization": os.getenv('WOW_AUDIT_BEARER')
@@ -20,15 +24,15 @@ def get_roster():
             character.pop(key)
     return roster
 
-def get_mythics_done():
-    roster = get_roster()
+def get_mythics_done(last_msg):
+    roster = get_roster(last_msg)
     headers = { 
         "accept": "application/json", 
         }
 
     roster_mythics_done = {}
 
-    for character in roster:
+    for number, character in enumerate(roster):
         name = character['name']
         realm = character['realm'].replace('Marecage de Zangar', 'Marécage de Zangar').replace(' ', '-')
         result = requests.get('https://raider.io/api/v1/characters/profile?region=eu&realm=%s&name=%s&fields=mythic_plus_weekly_highest_level_runs' % (realm, name), headers=headers)
@@ -66,20 +70,14 @@ def format_mythics_done(roster_mythics_done, min_lvl):
         
     
 
-intents = discord.Intents.default()
-intents.message_content = True
-client = discord.Client(intents=intents)
 
-@client.event
-async def on_message(message):
-    if message.author.id == client.user:
-        return
+@bot.command()
+async def mythics_done(ctx, *arg):
+    last_msg = await ctx.send('Commande lancée...')
+    minimal_level = 0
+    if len(arg) == 1:
+        if arg[0].isdigit():
+            minimal_level = int(arg[0])
+    await ctx.send(format_mythics_done(get_mythics_done(last_msg), minimal_level))
 
-    if message.content.startswith('!mythics_done'):
-        minimal_level = 0
-        if len(message.content.split()) == 2:
-            if message.content.split()[1].isdigit():
-                minimal_level = int(message.content.split()[1])
-        await message.channel.send(format_mythics_done(get_mythics_done(), minimal_level))
-
-client.run(os.getenv('DISCORD_BOT_KEY'))
+bot.run(os.getenv('DISCORD_BOT_KEY'))
