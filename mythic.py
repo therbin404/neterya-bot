@@ -82,4 +82,4 @@ async def on_message(message):
                 minimal_level = int(message.content.split()[1])
         await message.channel.send(format_mythics_done(get_mythics_done(), minimal_level))
 
-client.run(os.getenv('DISCORD_KEY'))
+client.run(os.getenv('DISCORD_BOT_KEY'))
