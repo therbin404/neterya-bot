@@ -73,7 +73,7 @@ def format_mythics_done(roster_mythics_done, min_lvl):
     string_to_return += '\n```'
     return string_to_return
 
-@tree.command(name="mythics", description="Show chests based on mythics plus done", guild=discord.Object(id=356909829652217857))
+@tree.command(name="mythics", description="Show chests based on mythics plus done", guild=os.getenv('DISCORD_ID'))
 @app_commands.choices(semaine=[
     app_commands.Choice(name="Actuelle", value="current"),
     app_commands.Choice(name="Dernière", value="last"),
@@ -86,7 +86,7 @@ async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]
 
 @client.event
 async def on_ready():
-    await tree.sync(guild=discord.Object(id=356909829652217857))
+    await tree.sync(guild=os.getenv('DISCORD_ID'))
     print("Ready!")
 
 client.run(os.getenv('DISCORD_BOT_KEY'))
