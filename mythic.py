@@ -1,15 +1,18 @@
 import requests
 import os
 import discord
-from discord.ext import commands
+import typing
+from discord import app_commands
 from dotenv import load_dotenv
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='!',intents=intents)
+client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
+
 load_dotenv()
     
-def get_roster(last_msg):
+def get_roster():
     headers = { 
         "accept": "application/json", 
         "Authorization": os.getenv('WOW_AUDIT_BEARER')
@@ -24,8 +27,8 @@ def get_roster(last_msg):
             character.pop(key)
     return roster
 
-def get_mythics_done(last_msg):
-    roster = get_roster(last_msg)
+def get_mythics_done():
+    roster = get_roster()
     headers = { 
         "accept": "application/json", 
         }
@@ -67,17 +70,16 @@ def format_mythics_done(roster_mythics_done, min_lvl):
         string_to_return += '\n%s (%d) %s: %s' % (mark, keys_done, character, levels_string)
     string_to_return += '\n```'
     return string_to_return
-        
-    
 
+@tree.command(name="mythics_done", description="Show chests based on mythics plus done", guild=discord.Object(id=356909829652217857))
+async def mythics_done(interaction, level: typing.Optional[int] = 0):
+    await interaction.response.send_message('Commande lancée...')
+    response = format_mythics_done(get_mythics_done(), level)
+    await interaction.edit_original_response(content=response)
 
-@bot.command()
-async def mythics_done(ctx, *arg):
-    last_msg = await ctx.send('Commande lancée...')
-    minimal_level = 0
-    if len(arg) == 1:
-        if arg[0].isdigit():
-            minimal_level = int(arg[0])
-    await ctx.send(format_mythics_done(get_mythics_done(last_msg), minimal_level))
+@client.event
+async def on_ready():
+    await tree.sync(guild=discord.Object(id=356909829652217857))
+    print("Ready!")
 
-bot.run(os.getenv('DISCORD_BOT_KEY'))
+client.run(os.getenv('DISCORD_BOT_KEY'))
