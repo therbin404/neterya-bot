@@ -19,13 +19,13 @@ class WowAudit:
         return roster
 
     def get_raids(self, include_past):
-        result = requests.get('https://wowaudit.com/v1/raids?include_past=%s' % include_past, headers=self.audit_headers).json()
+        result = requests.get('https://wowaudit.com/v1/raids?include_past=%s' % include_past, headers=self.audit_headers)
         raids = result.json()
 
         return raids
 
     def get_raid(self, raid_id):
-        requests.get('https://wowaudit.com/v1/raids/%s' % raid_id, headers=self.audit_headers).json()
+        result = requests.get('https://wowaudit.com/v1/raids/%s' % raid_id, headers=self.audit_headers)
         raid = result.json()
 
         return raid

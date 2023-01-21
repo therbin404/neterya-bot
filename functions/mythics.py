@@ -2,7 +2,7 @@ import api
 
 class Mythics:
 
-    def get_mythics_done(week):
+    def get_mythics_done(self, week):
         wowaudit = api.wowaudit.WowAudit()
         raiderio = api.raiderio.RaiderIO()
         roster = wowaudit.get_roster()
@@ -25,7 +25,7 @@ class Mythics:
 
         return roster_mythics_done
 
-    def format_mythics_done(roster_mythics_done, min_lvl):
+    def format_mythics_done(self, roster_mythics_done, min_lvl):
         # we set this block as diff code because we want to color it red, gray, or green
         string_to_return = '**\>= ' + str(min_lvl) + '**\n```diff'
         for character, mythics_done in roster_mythics_done.items():

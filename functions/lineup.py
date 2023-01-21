@@ -4,7 +4,7 @@ import datetime
 
 class Lineup:
 
-    def find_backups(text, roster):
+    def find_backups(self, text, roster):
         backup_string = re.findall(r"^Backups:(.*)", text)
         backups = []
         discord_string = text
@@ -14,14 +14,15 @@ class Lineup:
             for index, backup in enumerate(backups):
                 if index > 0:
                     discord_string += '\n'
-                note = list(filter(lambda c: c['name'] == backup.strip(), roster))[0]['note']
+                print(backup.strip())
+                note = list(filter(lambda c: c['name'] == backup.strip().replace('&nbsp;', ''), roster))[0]['note']
                 discord_string += '<@%s>' % note
             discord_string = re.sub(r"^Backups:(.*)", '', discord_string)
 
         return discord_string
 
-    def get_lineup(date):
-        wowaudit = api.raiderio.WowAudit()
+    def get_lineup(self, date = False):
+        wowaudit = api.wowaudit.WowAudit()
         roster = wowaudit.get_roster()
 
         include_past = 'false'
@@ -63,13 +64,13 @@ class Lineup:
                         if character['character']['id'] not in characters_selected:
                             characters_selected[character['character']['id']] = {'role': character['character']['role'], 'encounters': []}
                     html_free = re.sub(r"<[^<]+?>", "", next_raid['notes'])
-                    html_free = find_backups(html_free, roster)
+                    html_free = self.find_backups(html_free, roster)
                     general_note += '\n\n%s' % html_free
                 else:
                     for encounter in encounters:
                         if encounter['notes']:
                             html_free = re.sub(r"<[^<]+?>", "", encounter['notes'])
-                            html_free = find_backups(html_free, roster)
+                            html_free = self.find_backups(html_free, roster)
                             general_note += '\n\n%s' % html_free
                         encounters_name.append(encounter['name'])
                         encounter_roster = encounter['selections']

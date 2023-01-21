@@ -21,14 +21,16 @@ guild_obj = discord.Object(id=int(os.getenv('DISCORD_ID')))
     app_commands.Choice(name="Dernière", value="last"),
     ])
 async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]], niveau: typing.Optional[int] = 0):
+    Mythics = functions.mythics.Mythics()
     semaine = 'current' if semaine == None else semaine.value
     await interaction.response.send_message('Commande lancée...')
-    response = functions.mythics.Mythics.format_mythics_done(functions.mythics.Mythics.get_mythics_done(semaine), niveau)
+    response = Mythics.format_mythics_done(Mythics.get_mythics_done(semaine), niveau)
     await interaction.edit_original_response(content=response)
 
 @tree.command(name="lineup", description="Publish lineup for next raid", guild=guild_obj)
 async def lineup(interaction, date: typing.Optional[str] = ''):
-    await interaction.response.send_message(functions.lineup.Lineup.get_lineup(date))
+    Lineup = functions.lineup.Lineup()
+    await interaction.response.send_message(Lineup.get_lineup(date))
 
 @client.event
 async def on_ready():
