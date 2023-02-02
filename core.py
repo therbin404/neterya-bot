@@ -25,14 +25,23 @@ async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]
     semaine = 'current' if semaine == None else semaine.value
     await interaction.response.defer()
     response = Mythics.format_mythics_done(Mythics.get_mythics_done(semaine), niveau)
-    await interaction.followup.send(content=response)
+    await interaction.edit_original_response(content=response)
 
 @tree.command(name="lineup", description="Publish lineup for next raid", guild=guild_obj)
 async def lineup(interaction, date: typing.Optional[str] = ''):
     Lineup = functions.lineup.Lineup()
     # defer is here to quick respond to discord, to avoid timeout of application
     await interaction.response.defer()
-    await interaction.followup.send(Lineup.get_lineup(date))
+    # return [(bool), errors or string]
+    # first argument if there's any errors
+    # second is errors, or expected response if there's no errors
+    response = Lineup.get_lineup(date)
+    
+    if response[0]:
+        await interaction.delete_original_response()
+        await interaction.user.send(content=response[1])
+    elif not response[0]:
+        await interaction.edit_original_response(content=response[1])
 
 @client.event
 async def on_ready():

@@ -5,6 +5,7 @@ import datetime
 class Lineup:
 
     def find_backups(self, text, roster):
+        missing_backup_note = 0
         backup_string = re.findall(r"^Backups:(.*)", text)
         backups = []
         discord_string = text
@@ -16,12 +17,16 @@ class Lineup:
                     discord_string += '\n'
                 print(backup.strip())
                 note = list(filter(lambda c: c['name'] == backup.strip().replace('&nbsp;', ''), roster))[0]['note']
+                if not note:
+                    missing_backup_note += 1
                 discord_string += '<@%s>' % note
             discord_string = re.sub(r"^Backups:(.*)", '', discord_string)
 
-        return discord_string
+        return missing_backup_note, discord_string
 
     def get_lineup(self, date = False):
+        errors = []
+
         wowaudit = api.wowaudit.WowAudit()
         roster = wowaudit.get_roster()
 
@@ -37,6 +42,9 @@ class Lineup:
 
         if result:
             if len(result['raids']) > 0:
+                # we setup the missing characters notes (discord ids), to return it later in the errors array
+                missing_notes = 0
+
                 raid_id = str(result['raids'][0]['id'])
                 if date:
                     raid = list(filter(lambda r: r['date'] == date, result['raids']))
@@ -64,14 +72,18 @@ class Lineup:
                         if character['character']['id'] not in characters_selected:
                             characters_selected[character['character']['id']] = {'role': character['character']['role'], 'encounters': []}
                     html_free = re.sub(r"<[^<]+?>", "", next_raid['notes'])
+                    # returns [number_of_missing_notes, backups_string]
                     html_free = self.find_backups(html_free, roster)
-                    general_note += '\n\n%s' % html_free
+                    missing_notes += html_free[0]
+                    general_note += '\n\n%s' % html_free[1]
                 else:
                     for encounter in encounters:
                         if encounter['notes']:
                             html_free = re.sub(r"<[^<]+?>", "", encounter['notes'])
+                            # returns [number_of_missing_notes, backups_string]
                             html_free = self.find_backups(html_free, roster)
-                            general_note += '\n\n%s' % html_free
+                            missing_notes += html_free[0]
+                            general_note += '\n\n%s' % html_free[1]
                         encounters_name.append(encounter['name'])
                         encounter_roster = encounter['selections']
                         for character in encounter_roster:
@@ -86,10 +98,14 @@ class Lineup:
                 string_ranged = ''
                 string_heal = ''
                 note_encounters = ''
+
                 for character in characters_selected:
                     current_char = characters_selected[character]
                     note = list(filter(lambda c: c['id'] == character, roster))[0]['note']
-                    print('%s %s' %(character, note))
+                    if not note:
+                        missing_notes += 1
+                        continue
+                        
                     if len(current_char['encounters']) > 0:
                         if len(current_char['encounters']) < len(encounters_name):
                             note_encounters = 'seulement pour '
@@ -106,6 +122,9 @@ class Lineup:
                         string_ranged += '\n<@%s> %s' % (note, note_encounters)
                     elif current_char['role'] == 'Heal':
                         string_heal += '\n<@%s> %s' % (note, note_encounters)
+                
+                if missing_notes > 0:
+                    errors.append('%d personnes dans la LU n\'ont pas leur ID discord sur leur note Wow Audit !' % missing_notes)
 
                 if len(string_tank) > 0:
                     string_to_return += '**Tanks**%s\n\n' % string_tank 
@@ -118,4 +137,10 @@ class Lineup:
 
                 string_to_return += general_note
             
-        return string_to_return
+        if errors:
+            errors_string = 'Et BIM ! Feignus a encore fait des conneries. A moins que la config soit pas bonne ? J\'te laisse check.'
+            for index, error in enumerate(errors):
+                errors_string += '\n%d. %s' % (index + 1, error)
+            return True, errors_string
+
+        return False, string_to_return
