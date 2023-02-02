@@ -89,6 +89,7 @@ class Lineup:
                 for character in characters_selected:
                     current_char = characters_selected[character]
                     note = list(filter(lambda c: c['id'] == character, roster))[0]['note']
+                    print('%s %s' %(character, note))
                     if len(current_char['encounters']) > 0:
                         if len(current_char['encounters']) < len(encounters_name):
                             note_encounters = 'seulement pour '

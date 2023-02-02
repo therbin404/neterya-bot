@@ -23,14 +23,16 @@ guild_obj = discord.Object(id=int(os.getenv('DISCORD_ID')))
 async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]], niveau: typing.Optional[int] = 0):
     Mythics = functions.mythics.Mythics()
     semaine = 'current' if semaine == None else semaine.value
-    await interaction.response.send_message('Commande lancée...')
+    await interaction.response.defer()
     response = Mythics.format_mythics_done(Mythics.get_mythics_done(semaine), niveau)
-    await interaction.edit_original_response(content=response)
+    await interaction.followup.send(content=response)
 
 @tree.command(name="lineup", description="Publish lineup for next raid", guild=guild_obj)
 async def lineup(interaction, date: typing.Optional[str] = ''):
     Lineup = functions.lineup.Lineup()
-    await interaction.response.send_message(Lineup.get_lineup(date))
+    # defer is here to quick respond to discord, to avoid timeout of application
+    await interaction.response.defer()
+    await interaction.followup.send(Lineup.get_lineup(date))
 
 @client.event
 async def on_ready():
