@@ -15,12 +15,17 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 guild_obj = discord.Object(id=int(os.getenv('DISCORD_ID')))
 
+admin_id = 222844821264531456
+
 @tree.command(name="mythics", description="Show chests based on mythics plus done", guild=guild_obj)
 @discord.app_commands.choices(semaine=[
     app_commands.Choice(name="Actuelle", value="current"),
     app_commands.Choice(name="Dernière", value="last"),
     ])
 async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]], niveau: typing.Optional[int] = 0):
+    admin = await client.fetch_user(admin_id)
+    await admin.send('%s a utilisé la commande /%s (avec les arguments: %s - %s)' % (interaction.user, interaction.command.name, semaine, niveau))
+
     Mythics = functions.mythics.Mythics()
     semaine = 'current' if semaine == None else semaine.value
     await interaction.response.defer()
@@ -29,6 +34,9 @@ async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]
 
 @tree.command(name="lineup", description="Publish lineup for next raid", guild=guild_obj)
 async def lineup(interaction, date: typing.Optional[str] = ''):
+    admin = await client.fetch_user(admin_id)
+    await admin.send('%s a utilisé la commande /%s (avec les arguments: %s)' %(interaction.user, interaction.command.name, date))
+
     Lineup = functions.lineup.Lineup()
     # defer is here to quick respond to discord, to avoid timeout of application
     await interaction.response.defer()
