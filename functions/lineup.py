@@ -53,8 +53,14 @@ class Lineup:
 
                 next_raid = wowaudit.get_raid(raid_id)
 
-                next_raid_date = datetime.datetime.strptime(next_raid['date'], '%Y-%m-%d')
-                next_raid_date = next_raid_date.strftime('%d/%m')
+                next_raid_datetime = datetime.datetime.strptime(next_raid['date'], '%Y-%m-%d')
+                next_raid_date = next_raid_datetime.strftime('%d/%m')
+                # we need to compare raid date to yesterday, because the raid date is always set a 00:00. 
+                # in the worst case, datetime.now() will be same day, 23:59:59
+                # and will be greater than raid date
+                if next_raid_datetime < (datetime.datetime.now() + datetime.timedelta(days=-1)):
+                    errors.append('La date du prochain raid %s est dans le passé, Marty !' % next_raid_datetime.strftime('%d/%m/%Y'))
+
                 string_to_return += '\u200b \n** Raid du %s **\n\n' % next_raid_date
 
                 encounters = filter(lambda a: a['enabled'], next_raid['encounters'])
