@@ -23,23 +23,24 @@ admin_id = 222844821264531456
     app_commands.Choice(name="Dernière", value="last"),
     ])
 async def mythics(interaction, semaine: typing.Optional[app_commands.Choice[str]], niveau: typing.Optional[int] = 0):
+    await interaction.response.defer()
     admin = await client.fetch_user(admin_id)
     await admin.send('%s a utilisé la commande /%s (avec les arguments: %s - %s)' % (interaction.user, interaction.command.name, semaine, niveau))
 
     Mythics = functions.mythics.Mythics()
     semaine = 'current' if semaine == None else semaine.value
-    await interaction.response.defer()
     response = Mythics.format_mythics_done(Mythics.get_mythics_done(semaine), niveau)
     await interaction.edit_original_response(content=response)
 
 @tree.command(name="lineup", description="Publish lineup for next raid", guild=guild_obj)
 async def lineup(interaction, date: typing.Optional[str] = ''):
+    # defer is here to quick respond to discord, to avoid timeout of application
+    await interaction.response.defer()
+
     admin = await client.fetch_user(admin_id)
     await admin.send('%s a utilisé la commande /%s (avec les arguments: %s)' %(interaction.user, interaction.command.name, date))
 
     Lineup = functions.lineup.Lineup()
-    # defer is here to quick respond to discord, to avoid timeout of application
-    await interaction.response.defer()
     # return [(bool), errors or string]
     # first argument if there's any errors
     # second is errors, or expected response if there's no errors
