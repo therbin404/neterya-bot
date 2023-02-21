@@ -63,7 +63,7 @@ class Lineup:
 
                 string_to_return += '\u200b \n** Raid du %s **\n\n' % next_raid_date
 
-                encounters = filter(lambda a: a['enabled'], next_raid['encounters'])
+                encounters = list(filter(lambda a: a['enabled'], next_raid['encounters']))
                 characters_selected = {}
                 encounters_name = []
                 general_note = ''
