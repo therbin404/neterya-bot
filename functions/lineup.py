@@ -120,14 +120,15 @@ class Lineup:
                                     note_encounters += ', '
                                 note_encounters += encounter
 
-                    if current_char['role'] == 'Tank':
-                        string_tank += '\n<@%s> %s' % (note, note_encounters)
-                    elif current_char['role'] == 'Melee':
-                        string_melee += '\n<@%s> %s' % (note, note_encounters)
-                    elif current_char['role'] == 'Ranged':
-                        string_ranged += '\n<@%s> %s' % (note, note_encounters)
-                    elif current_char['role'] == 'Heal':
-                        string_heal += '\n<@%s> %s' % (note, note_encounters)
+                    if len(current_char['encounters']) > 0:
+                        if current_char['role'] == 'Tank':
+                            string_tank += '\n<@%s> %s' % (note, note_encounters)
+                        elif current_char['role'] == 'Melee':
+                            string_melee += '\n<@%s> %s' % (note, note_encounters)
+                        elif current_char['role'] == 'Ranged':
+                            string_ranged += '\n<@%s> %s' % (note, note_encounters)
+                        elif current_char['role'] == 'Heal':
+                            string_heal += '\n<@%s> %s' % (note, note_encounters)
                 
                 if missing_notes > 0:
                     errors.append('%d personnes dans la LU n\'ont pas leur ID discord sur leur note Wow Audit !' % missing_notes)
