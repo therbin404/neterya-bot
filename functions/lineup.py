@@ -76,7 +76,8 @@ class Lineup:
                 if len(list(encounters)) == 0:
                     for character in list(filter(lambda c: c['selected'], next_raid['signups'])):
                         if character['character']['id'] not in characters_selected:
-                            characters_selected[character['character']['id']] = {'role': character['character']['role'], 'encounters': []}
+                            characters_selected[character['character']['id']] = {'role': character['character']['role'], 'encounters': ['all']}
+                        print(characters_selected)
                     html_free = re.sub(r"<[^<]+?>", "", next_raid['notes'])
                     # returns [number_of_missing_notes, backups_string]
                     html_free = self.find_backups(html_free, roster)
