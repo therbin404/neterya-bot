@@ -13,6 +13,8 @@ class WowAudit:
             }
 
     def get_roster(self):
+        """Get all members of the roster on wow audit
+        """
         result = requests.get("https://wowaudit.com/v1/characters", headers=self.audit_headers)
         roster = result.json()
 
