@@ -39,9 +39,16 @@ load_dotenv()
 bot = discord.Bot()
 
 @bot.slash_command(name="lineup")
-async def lineup(ctx: discord.ApplicationContext, date: discord.Option(str)):
-    print(date)
-    await ctx.respond(f"test lu")
+async def lineup(
+    ctx: discord.ApplicationContext, 
+    date: discord.Option(input_type=str, required=False, description='Date, at YYYY-MM-DD format')
+    ):
+    await ctx.defer()
+    try:
+        Lineup = functions.lineup.Lineup(date)
+        await ctx.followup.send(Lineup.lineup)
+    except Exception as e:
+        await ctx.followup.send(f"Oops, something went wrong ! Try to use the force, Luke !\n({e})")
 
 @bot.slash_command(name="mythics")
 async def mythics_command(

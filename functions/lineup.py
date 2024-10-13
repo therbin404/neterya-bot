@@ -1,8 +1,152 @@
 import api
 import re
-import datetime
+from datetime import datetime
 
 class Lineup:
+
+    def __init__(self, date):
+        self.date = date
+        self.lineup = self.get_lineup()
+
+    def get_next_raid(self):
+        wowaudit = api.wowaudit.WowAudit()
+        raids = wowaudit.get_raids()
+
+        now = datetime.now()
+        next_raid_date = now if now.hour < 18 else now.timedelta(days=1)
+        date = self.date if self.date else next_raid_date.strftime('%Y-%m-%d')
+
+        next_raid = list(filter(lambda raid: raid['date'] == date, raids['raids']))
+        next_raid_id = next_raid[0]['id'] if next_raid else 0
+        if next_raid_id:
+            result = wowaudit.get_raid(next_raid_id)
+        else:
+            result = False
+
+        return result
+
+    def get_lineup(self)
+        wowaudit = api.wowaudit.WowAudit()
+        roster = wowaudit.get_roster()
+        next_raid = self.get_next_raid()
+
+        if next_raid:
+            # we will have to search if encounters are enabled
+            # if some of them are enabled, we must look into selection of them 
+            # if none of encounters are enabled, we can seek for selected players in general config
+            # as if an encounter si not enabled, he will nto have the selection section
+            # {
+            #     "id":1835577,
+            #     "date":"2024-10-13",
+            #     "start_time":"00:00",
+            #     "end_time":"00:00",
+            #     "instance":"Nerub-ar Palace",
+            #     "optional":false,
+            #     "difficulty":"Mythic",
+            #     "status":"Planned",
+            #     "present_size":1,
+            #     "total_size":1,
+            #     "notes":null,
+            #     "selections_image":"https://data.wowaudit.com/selections/1835577/e30f6846e9b4630e59a69c0a89d9244dadd18b54125025936a1ff663555d5147.png",
+            #     "signups":[
+            #         {
+            #             "character":{
+            #                 "id":3905754,
+            #                 "name":"Feignus",
+            #                 "realm":"Dalaran",
+            #                 "class":"Hunter",
+            #                 "role":"Ranged",
+            #                 "guest":true
+            #             },
+            #             "status":"Present",
+            #             "comment":null,
+            #             "selected":true,
+            #             "class":"Hunter",
+            #             "role":"Ranged"
+            #         }
+            #     ],
+            #     "encounters":[
+            #         {
+            #             "name":"Ulgrax",
+            #             "id":16644,
+            #             "enabled":true,
+            #             "extra":false,
+            #             "notes":null,
+            #             "selections":[
+            #                 {
+            #                 "character_id":3905754,
+            #                 "selected":true,
+            #                 "class":"Hunter",
+            #                 "role":"Ranged",
+            #                 "wishlist_score":2
+            #                 }
+            #             ]
+            #         },
+            #         {
+            #             "name":"The Bloodbound Horror",
+            #             "id":16645,
+            #             "enabled":true,
+            #             "extra":false,
+            #             "notes":null,
+            #             "selections":[
+            #                 {
+            #                 "character_id":3905754,
+            #                 "selected":true,
+            #                 "class":"Hunter",
+            #                 "role":"Ranged",
+            #                 "wishlist_score":1
+            #                 }
+            #             ]
+            #         },
+            #         {
+            #             "name":"Sikran",
+            #             "id":16646,
+            #             "enabled":false,
+            #             "extra":false,
+            #             "notes":null
+            #         },
+            #         {
+            #             "name":"Rasha'nan",
+            #             "id":16647,
+            #             "enabled":false,
+            #             "extra":false,
+            #             "notes":null
+            #         },
+            #         {
+            #             "name":"Broodtwister Ovi'nax",
+            #             "id":16648,
+            #             "enabled":false,
+            #             "extra":false,
+            #             "notes":null
+            #         },
+            #         {
+            #             "name":"Nexus-Princess Ky'veza",
+            #             "id":16649,
+            #             "enabled":false,
+            #             "extra":false,
+            #             "notes":null
+            #         },
+            #         {
+            #             "name":"The Silken Court",
+            #             "id":16650,
+            #             "enabled":false,
+            #             "extra":false,
+            #             "notes":null
+            #         },
+            #         {
+            #             "name":"Queen Ansurek",
+            #             "id":16651,
+            #             "enabled":false,
+            #             "extra":false,
+            #             "notes":null
+            #         }
+            #     ]
+            #     }
+            selected_players = [player.get('character') for player in next_raid['signups'] if player['selected']]
+            selected_ids = [player.get('id') for player in players]
+
+
+
 
     def find_backups(self, text, roster):
         missing_backup_note = 0
