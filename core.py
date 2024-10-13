@@ -44,17 +44,22 @@ async def lineup(ctx: discord.ApplicationContext, date: discord.Option(str)):
     await ctx.respond(f"test lu")
 
 @bot.slash_command(name="mythics")
-async def mythics_command(ctx: discord.ApplicationContext, week: discord.Option(input_type=str, choices=['current', 'last'], required=True, description='Watching period'), level: discord.Option(input_type=int, required=False, description='Minimum level asked')):
+async def mythics_command(
+    ctx: discord.ApplicationContext, 
+    week: discord.Option(input_type=str, choices=['current', 'last'], required=True, description='Watching period'), 
+    level: discord.Option(input_type=int, required=False, description='Minimum level asked'), 
+    show_all_chests: discord.Option(input_type=str, choices=['yes', 'no'], required=False, description='Display all chests')
+    ):
     """Returns the mythics done by the roster, formatted to highlight min level parameter
     """
     # ctx.defer is here to replace default timeout that is too quick
     # with this, it waits for the first thing it can send (here followup.send)
     await ctx.defer()
     try:
-        Mythics = functions.mythics.Mythics(week, level)
-        await ctx.followup.send(Mythics.mythics_done)
-    except:
-        await ctx.followup.send("Oops, something went wrong ! Try to use the force, Luke ! (Do not if you're not Luke)")
+        Mythics = functions.mythics.Mythics(week, level, show_all_chests)
+        await ctx.followup.send(embed=Mythics.mythics_done)
+    except Exception as e:
+        await ctx.followup.send(f"Oops, something went wrong ! Try to use the force, Luke !\n({e})")
 
 @bot.event
 async def on_ready():

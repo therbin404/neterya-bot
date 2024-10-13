@@ -1,13 +1,16 @@
 import api
+import discord
 
 class Mythics:
 
-    def __init__(self, week, min_level):
+    def __init__(self, week, min_level, show_all_chests):
         self.week = week
         self.min_level = min_level
-        self.mythics_done = self.format_mythics_done(week, min_level)
+        show_all_chests = True if show_all_chests == 'yes' else False
+        self.mythics_done = self.format_mythics_done(week, min_level, show_all_chests)
 
     def get_mythics_done(self):
+        """Get all mythics done informations from wowaudit and raider.io"""
         wowaudit = api.wowaudit.WowAudit()
         raiderio = api.raiderio.RaiderIO()
         roster = wowaudit.get_roster()
@@ -24,22 +27,31 @@ class Mythics:
 
         return roster_mythics_done
 
-    def format_mythics_done(self, week, min_lvl):
-        # we set this block as diff code because we want to color it red, gray, or green
-        string_to_return = f"**{week} week \>= {str(min_lvl)}**\n```diff\n"
+    def format_mythics_done(self, week, min_lvl, show_all_chests):
+        """Handle and format datas"""
         raw_mythics_done = self.get_mythics_done()
-
+        res = discord.Embed(
+            title=f"Mythics done",
+            description=f"{week.capitalize()} week \>= {str(min_lvl)}",
+            color=discord.Colour.blurple(),
+        )
+        string_players_done = string_players_done_wrong = string_players_not_done = ""
         for character, levels_done in raw_mythics_done.items():
-            string_to_apply = character + ': '
-            mark = '-'
             number_done = len(levels_done)
             if levels_done:
-                string_to_apply += f"Bonus 1: {str(levels_done[0])}"
+                string_to_apply = f"Bonus 1: {str(levels_done[0])}"
                 if number_done > 3:
                     string_to_apply += f", Bonus 4: {str(levels_done[3])}"
-                    if levels_done[3] >= 10:
-                        mark = '+'
-            string_to_return += f"{mark} {(str(number_done))} {string_to_apply}\n"
+                    if number_done > 7 and show_all_chests:
+                        string_to_apply += f", Bonus 8: {str(levels_done[7])}"
+                    if levels_done[3] >= int(min_lvl):
+                        string_players_done += f"\n> **{character}**\n> *({string_to_apply})*"
+                    else:
+                        string_players_done_wrong += f"\n> **{character}**\n> *({string_to_apply})*"
+            else:
+                string_players_not_done += f"\n> **{character}**\n> *(No mythics done)*"
 
-        string_to_return += '\n```'
-        return string_to_return
+        res.add_field(name="✅", value=string_players_done, inline=True)
+        res.add_field(name="⚠️", value=string_players_done_wrong, inline=True)
+        res.add_field(name="❌", value=string_players_not_done, inline=True)
+        return res
