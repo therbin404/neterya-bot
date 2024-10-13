@@ -1,154 +1,161 @@
 import api
+import discord
 import re
 from datetime import datetime
+from datetime import timedelta
+from itertools import groupby
 
 class Lineup:
 
+    mapped_char_discord = []
+    roster = []
+
     def __init__(self, date):
         self.date = date
+        self.wowaudit = api.wowaudit.WowAudit()
+        self.roster = self.wowaudit.get_roster()
+        self.mapped_char_discord = self.map_char_discord()
         self.lineup = self.get_lineup()
 
     def get_next_raid(self):
-        wowaudit = api.wowaudit.WowAudit()
-        raids = wowaudit.get_raids()
+        """Get the next raid based on date"""
+        raids = self.wowaudit.get_raids()
 
         now = datetime.now()
-        next_raid_date = now if now.hour < 18 else now.timedelta(days=1)
+        # the next raid date is tonight if the command is launch before 18h
+        next_raid_date = now if now.hour < 18 else now + timedelta(days=1)
         date = self.date if self.date else next_raid_date.strftime('%Y-%m-%d')
 
         next_raid = list(filter(lambda raid: raid['date'] == date, raids['raids']))
         next_raid_id = next_raid[0]['id'] if next_raid else 0
         if next_raid_id:
-            result = wowaudit.get_raid(next_raid_id)
+            result = self.wowaudit.get_raid(next_raid_id)
         else:
             result = False
 
         return result
 
-    def get_lineup(self)
-        wowaudit = api.wowaudit.WowAudit()
-        roster = wowaudit.get_roster()
+
+    def get_selected_players(self, selections, all=False):
+        """Returns a dict that contains all discord ids selected grouped by role
+        
+        e.g: {'Ulgrax': {'Ranged': [39057542431234]}, 'The Bloodbound Horror': {'Ranged': [390575423443, 51919515234234], 'Melee': [51203698123213]}}"""
+        encounter_selections = {}
+        # we sort the dict by role, as groupby only group consecutive items together
+        sorted_selections = sorted(selections, key=lambda selection: selection['role'])
+
+        roles_grouped = groupby(sorted_selections, lambda x: x['role'])
+        
+        for role, players in roles_grouped:
+            encounter_selections[role] = [player.get('character').get('id') for player in players if player.get('selected')] if all else [player.get('character_id') for player in players if player.get('selected')]
+
+            for index, character_id in enumerate(encounter_selections[role]):
+                encounter_selections[role][index] = self.find_discord_id(character_id)
+
+        return encounter_selections
+
+    def find_discord_ids_by_name(self, names):
+        """Find discord id with names as a list"""
+        discord_ids = []
+        for name in names:
+            discord_ids.append(self.find_discord_id(name=name))
+        return discord_ids
+
+    def find_discord_id(self, character_id=False, name=False):
+        """Find the discord id based on character id or name"""
+        if name:
+            # TODO : Add exception if name not found
+            character_id = [item.get('id') for item in self.roster if item.get('name') == name]
+            character_id = character_id[0] if character_id else False
+
+        return ''.join([item.get(character_id) for item in self.mapped_char_discord if item.get(character_id)])
+
+
+    def map_char_discord(self):
+        """Init an array of dict that map discord id and character id"""
+        return [{char.get('id'): char.get('note')} for char in self.roster]
+
+
+    def get_lineup(self):
         next_raid = self.get_next_raid()
 
         if next_raid:
-            # we will have to search if encounters are enabled
-            # if some of them are enabled, we must look into selection of them 
-            # if none of encounters are enabled, we can seek for selected players in general config
-            # as if an encounter si not enabled, he will nto have the selection section
-            # {
-            #     "id":1835577,
-            #     "date":"2024-10-13",
-            #     "start_time":"00:00",
-            #     "end_time":"00:00",
-            #     "instance":"Nerub-ar Palace",
-            #     "optional":false,
-            #     "difficulty":"Mythic",
-            #     "status":"Planned",
-            #     "present_size":1,
-            #     "total_size":1,
-            #     "notes":null,
-            #     "selections_image":"https://data.wowaudit.com/selections/1835577/e30f6846e9b4630e59a69c0a89d9244dadd18b54125025936a1ff663555d5147.png",
-            #     "signups":[
-            #         {
-            #             "character":{
-            #                 "id":3905754,
-            #                 "name":"Feignus",
-            #                 "realm":"Dalaran",
-            #                 "class":"Hunter",
-            #                 "role":"Ranged",
-            #                 "guest":true
-            #             },
-            #             "status":"Present",
-            #             "comment":null,
-            #             "selected":true,
-            #             "class":"Hunter",
-            #             "role":"Ranged"
-            #         }
-            #     ],
-            #     "encounters":[
-            #         {
-            #             "name":"Ulgrax",
-            #             "id":16644,
-            #             "enabled":true,
-            #             "extra":false,
-            #             "notes":null,
-            #             "selections":[
-            #                 {
-            #                 "character_id":3905754,
-            #                 "selected":true,
-            #                 "class":"Hunter",
-            #                 "role":"Ranged",
-            #                 "wishlist_score":2
-            #                 }
-            #             ]
-            #         },
-            #         {
-            #             "name":"The Bloodbound Horror",
-            #             "id":16645,
-            #             "enabled":true,
-            #             "extra":false,
-            #             "notes":null,
-            #             "selections":[
-            #                 {
-            #                 "character_id":3905754,
-            #                 "selected":true,
-            #                 "class":"Hunter",
-            #                 "role":"Ranged",
-            #                 "wishlist_score":1
-            #                 }
-            #             ]
-            #         },
-            #         {
-            #             "name":"Sikran",
-            #             "id":16646,
-            #             "enabled":false,
-            #             "extra":false,
-            #             "notes":null
-            #         },
-            #         {
-            #             "name":"Rasha'nan",
-            #             "id":16647,
-            #             "enabled":false,
-            #             "extra":false,
-            #             "notes":null
-            #         },
-            #         {
-            #             "name":"Broodtwister Ovi'nax",
-            #             "id":16648,
-            #             "enabled":false,
-            #             "extra":false,
-            #             "notes":null
-            #         },
-            #         {
-            #             "name":"Nexus-Princess Ky'veza",
-            #             "id":16649,
-            #             "enabled":false,
-            #             "extra":false,
-            #             "notes":null
-            #         },
-            #         {
-            #             "name":"The Silken Court",
-            #             "id":16650,
-            #             "enabled":false,
-            #             "extra":false,
-            #             "notes":null
-            #         },
-            #         {
-            #             "name":"Queen Ansurek",
-            #             "id":16651,
-            #             "enabled":false,
-            #             "extra":false,
-            #             "notes":null
-            #         }
-            #     ]
-            #     }
-            selected_players = [player.get('character') for player in next_raid['signups'] if player['selected']]
-            selected_ids = [player.get('id') for player in players]
+
+            # now we gonna handle the selections of each encounters (or all encounters if none is enabled)
+            all_selected = {}
+            activated_encounters = [encounter for encounter in next_raid['encounters'] if encounter['enabled']]
+            for activated_encounter in activated_encounters:
+                selections = activated_encounter.get('selections')
+                all_selected[activated_encounter.get('name')] = {
+                        'lineup': self.get_selected_players(selections),
+                        'note': activated_encounter['notes']
+                    }
+
+            if not activated_encounters:
+                all_selected['All'] = {
+                    'lineup': self.get_selected_players(next_raid['signups'], all=True),
+                    'note': next_raid['notes']
+                    }
+
+            for encounter, selection in all_selected.items():
+                selection = self.find_backups(selection)
+                
+            result = self.format_lineup(all_selected)
+            return result
+
+    def format_lineup(self, all_selected):
+        res = discord.Embed(
+            title=f"Lineup du {self.date}",
+            color=discord.Colour.blurple(),
+        )
+
+        string_total = ""
+        for encounter_name, encounter in all_selected.items():
+            # string_roles = ""
+            # for role, players in encounter['lineup'].items():
+            #     string_roles += f"\n> {role} :"
+            #     for player in players:
+            #         string_roles += f"\n> <@{player}>"
+            # string_total += f"\n{string_roles}\n\n{encounter['note']}"
+
+            # res.add_field(name=encounter_name, value=string_total, inline=True)
+            for role, players in encounter['lineup'].items():
+                string_players = ""
+                for player in players:
+                    string_players += f"\n> <@{player}>"
+                if role == "Tank":
+                    role = f"🛡️  {role}"
+                if role == "Heal":
+                    role = f"🩹  {role}"
+                if role == "Melee":
+                    role = f"⚔️  {role}"
+                if role == "Ranged":
+                    role = f"🏹  {role}"
+                if role == "Backups":
+                    role = f"🔄  {role}"
+                res.add_field(name=role, value=string_players, inline=True)
+
+            res.add_field(name="ℹ️  Note", value=encounter['note'], inline=True)
+        return res
+
+
+    def format_notes(self, notes):
+        html_free_notes = re.sub(r"<[^<]+?>", "", notes)
+        return html_free_notes
+
+    def find_backups(self, selection):
+        note = self.format_notes(selection['note'])
+        backup_string = re.search(r"Backups\s*:\s*(.+)", note)
+        if backup_string:
+            backup_players = backup_string.group(1).split(", ")
+        selection['lineup']['Backups'] = self.find_discord_ids_by_name(names=backup_players)
+        # now we h ave backups registered, remove the bakcups part of the note
+        selection['note'] = re.sub(r"Backups\s*:\s*(.+)", "", note)
+        return selection
 
 
 
-
-    def find_backups(self, text, roster):
+    def find_backups_bobby(self, text, roster):
         missing_backup_note = 0
         backup_string = re.findall(r"^Backups:(.*)", text)
         backups = []
@@ -168,7 +175,7 @@ class Lineup:
 
         return missing_backup_note, discord_string
 
-    def get_lineup(self, date = False):
+    def get_lineup_bobby(self, date = False):
         errors = []
 
         wowaudit = api.wowaudit.WowAudit()

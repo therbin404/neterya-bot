@@ -46,7 +46,7 @@ async def lineup(
     await ctx.defer()
     try:
         Lineup = functions.lineup.Lineup(date)
-        await ctx.followup.send(Lineup.lineup)
+        await ctx.followup.send(embed=Lineup.lineup)
     except Exception as e:
         await ctx.followup.send(f"Oops, something went wrong ! Try to use the force, Luke !\n({e})")
 
