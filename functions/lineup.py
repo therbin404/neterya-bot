@@ -9,9 +9,11 @@ class Lineup:
 
     mapped_char_discord = []
     roster = []
+    include_past = False
 
     def __init__(self, date):
         self.date = date
+        self.include_past = True if (self.date and self.date < datetime.now().strftime('%Y-%m-%d')) else False
         self.wowaudit = api.wowaudit.WowAudit()
         self.roster = self.wowaudit.get_roster()
         self.mapped_char_discord = self.map_char_discord()
@@ -19,7 +21,7 @@ class Lineup:
 
     def get_next_raid(self):
         """Get the next raid based on date"""
-        raids = self.wowaudit.get_raids()
+        raids = self.wowaudit.get_raids(self.include_past)
 
         now = datetime.now()
         # the next raid date is tonight if the command is launch before 18h
@@ -32,7 +34,6 @@ class Lineup:
             result = self.wowaudit.get_raid(next_raid_id)
         else:
             result = False
-
         return result
 
 
@@ -88,13 +89,13 @@ class Lineup:
                 selections = activated_encounter.get('selections')
                 all_selected[activated_encounter.get('name')] = {
                         'lineup': self.get_selected_players(selections),
-                        'note': activated_encounter['notes']
+                        'note': activated_encounter['notes'] if activated_encounter['notes'] else ""
                     }
 
             if not activated_encounters:
                 all_selected['All'] = {
                     'lineup': self.get_selected_players(next_raid['signups'], all=True),
-                    'note': next_raid['notes']
+                    'note': next_raid['notes'] if next_raid['notes'] else ""
                     }
 
             for encounter, selection in all_selected.items():
@@ -103,39 +104,46 @@ class Lineup:
             result = self.format_lineup(all_selected)
             return result
 
+    def set_role_icons(self, role):
+        if role == "Tank":
+            role = f"🛡️  {role}"
+        if role == "Heal":
+            role = f"🩹  {role}"
+        if role == "Melee":
+            role = f"⚔️  {role}"
+        if role == "Ranged":
+            role = f"🏹  {role}"
+        if role == "Backups":
+            role = f"🔄  {role}"
+        return role
+
     def format_lineup(self, all_selected):
+        nb_encounters = len(all_selected)
         res = discord.Embed(
             title=f"Lineup du {self.date}",
             color=discord.Colour.blurple(),
         )
 
-        string_total = ""
         for encounter_name, encounter in all_selected.items():
-            # string_roles = ""
-            # for role, players in encounter['lineup'].items():
-            #     string_roles += f"\n> {role} :"
-            #     for player in players:
-            #         string_roles += f"\n> <@{player}>"
-            # string_total += f"\n{string_roles}\n\n{encounter['note']}"
+            if nb_encounters > 1:
+                string_total = string_roles = ""
+                for role, players in encounter['lineup'].items():
+                    string_roles += f"\n> \n> {self.set_role_icons(role)} :"
+                    for player in players:
+                        string_roles += f"\n> <@{player}>"
+                string_total += f"\n{string_roles}"
+                if encounter['note']:
+                    string_total += f"\n> \n> ℹ️  Note\n> {encounter['note']}"
+                res.add_field(name=encounter_name, value=string_total, inline=True)
+            else:
+                for role, players in encounter['lineup'].items():
+                    string_players = ""
+                    for player in players:
+                        string_players += f"\n> <@{player}>"
+                    res.add_field(name=self.set_role_icons(role), value=string_players, inline=True)
 
-            # res.add_field(name=encounter_name, value=string_total, inline=True)
-            for role, players in encounter['lineup'].items():
-                string_players = ""
-                for player in players:
-                    string_players += f"\n> <@{player}>"
-                if role == "Tank":
-                    role = f"🛡️  {role}"
-                if role == "Heal":
-                    role = f"🩹  {role}"
-                if role == "Melee":
-                    role = f"⚔️  {role}"
-                if role == "Ranged":
-                    role = f"🏹  {role}"
-                if role == "Backups":
-                    role = f"🔄  {role}"
-                res.add_field(name=role, value=string_players, inline=True)
+                res.add_field(name="ℹ️  Note", value=encounter['note'], inline=True)
 
-            res.add_field(name="ℹ️  Note", value=encounter['note'], inline=True)
         return res
 
 
@@ -148,8 +156,8 @@ class Lineup:
         backup_string = re.search(r"Backups\s*:\s*(.+)", note)
         if backup_string:
             backup_players = backup_string.group(1).split(", ")
-        selection['lineup']['Backups'] = self.find_discord_ids_by_name(names=backup_players)
-        # now we h ave backups registered, remove the bakcups part of the note
+            selection['lineup']['Backups'] = self.find_discord_ids_by_name(names=backup_players)
+            # now we h ave backups registered, remove the bakcups part of the note
         selection['note'] = re.sub(r"Backups\s*:\s*(.+)", "", note)
         return selection
 
