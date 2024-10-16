@@ -53,17 +53,16 @@ class Mythics:
                             string_players_done_2 += f"\n> **{character}**\n> *({string_to_apply})*"
                         else:
                             string_players_done += f"\n> **{character}**\n> *({string_to_apply})*"
+                else:
+                    if self.is_too_long(string_players_done_wrong):
+                        string_players_done_wrong_2 += f"\n> **{character}**\n> *({string_to_apply})*"
                     else:
-                        if self.is_too_long(string_players_done_wrong):
-                            string_players_done_wrong_2 += f"\n> **{character}**\n> *({string_to_apply})*"
-                        else:
-                            string_players_done_wrong += f"\n> **{character}**\n> *({string_to_apply})*"
+                        string_players_done_wrong += f"\n> **{character}**\n> *({string_to_apply})*"
             else:
                 if self.is_too_long(string_players_not_done):
                     string_players_not_done_2 += f"\n> **{character}**\n> *(No mythics done)*"
                 else:
                     string_players_not_done += f"\n> **{character}**\n> *(No mythics done)*"
-
 
         if string_players_done:
             res.add_field(name="✅", value=string_players_done, inline=True)
