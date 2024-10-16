@@ -27,6 +27,10 @@ class Mythics:
 
         return roster_mythics_done
 
+    def is_too_long(self, string):
+        """Embed fields on discord accept up to 1024 chars, so we gonna take a safety margin"""
+        return True if len(string) > 824 else False
+
     def format_mythics_done(self, week, min_lvl, show_all_chests):
         """Handle and format datas"""
         raw_mythics_done = self.get_mythics_done()
@@ -35,7 +39,7 @@ class Mythics:
             description=f"{week.capitalize()} week \>= {str(min_lvl)}",
             color=discord.Colour.blurple(),
         )
-        string_players_done = string_players_done_wrong = string_players_not_done = ""
+        string_players_done = string_players_done_2 = string_players_done_wrong = string_players_done_wrong_2 = string_players_not_done = string_players_not_done_2 = ""
         for character, levels_done in raw_mythics_done.items():
             number_done = len(levels_done)
             if levels_done:
@@ -45,13 +49,34 @@ class Mythics:
                     if number_done > 7 and show_all_chests:
                         string_to_apply += f", Bonus 8: {str(levels_done[7])}"
                     if levels_done[3] >= int(min_lvl):
-                        string_players_done += f"\n> **{character}**\n> *({string_to_apply})*"
+                        if self.is_too_long(string_players_done):
+                            string_players_done_2 += f"\n> **{character}**\n> *({string_to_apply})*"
+                        else:
+                            string_players_done += f"\n> **{character}**\n> *({string_to_apply})*"
                     else:
-                        string_players_done_wrong += f"\n> **{character}**\n> *({string_to_apply})*"
+                        if self.is_too_long(string_players_done_wrong):
+                            string_players_done_wrong_2 += f"\n> **{character}**\n> *({string_to_apply})*"
+                        else:
+                            string_players_done_wrong += f"\n> **{character}**\n> *({string_to_apply})*"
             else:
-                string_players_not_done += f"\n> **{character}**\n> *(No mythics done)*"
+                if self.is_too_long(string_players_not_done):
+                    string_players_not_done_2 += f"\n> **{character}**\n> *(No mythics done)*"
+                else:
+                    string_players_not_done += f"\n> **{character}**\n> *(No mythics done)*"
 
-        res.add_field(name="✅", value=string_players_done, inline=True)
-        res.add_field(name="⚠️", value=string_players_done_wrong, inline=True)
-        res.add_field(name="❌", value=string_players_not_done, inline=True)
+
+        if string_players_done:
+            res.add_field(name="✅", value=string_players_done, inline=True)
+        if string_players_done_2:
+            res.add_field(name="✅ (2)", value=string_players_done_2, inline=True)
+
+        if string_players_done_wrong:
+            res.add_field(name="⚠️", value=string_players_done_wrong, inline=True)
+        if string_players_done_wrong_2:
+            res.add_field(name="⚠️ (2)", value=string_players_done_wrong_2, inline=True)
+
+        if string_players_not_done:
+            res.add_field(name="❌", value=string_players_not_done, inline=True)
+        if string_players_not_done_2:
+            res.add_field(name="❌ (2)", value=string_players_not_done_2, inline=True)
         return res
