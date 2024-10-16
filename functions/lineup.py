@@ -22,16 +22,23 @@ class Lineup:
     def get_next_raid(self):
         """Get the next raid based on date"""
         raids = self.wowaudit.get_raids(self.include_past)
+        print(raids)
 
         now = datetime.now()
-        # the next raid date is tonight if the command is launch before 18h
-        next_raid_date = now if now.hour < 18 else now + timedelta(days=1)
-        date = self.date if self.date else next_raid_date.strftime('%Y-%m-%d')
 
-        next_raid = list(filter(lambda raid: raid['date'] == date, raids['raids']))
-        next_raid_id = next_raid[0]['id'] if next_raid else 0
+        # if we have a date, we want the raid with that date
+        if self.date:
+            next_raid = list(filter(lambda raid: raid['date'] == self.date, raids['raids']))
+            next_raid_id = next_raid[0]['id'] if next_raid else False
+        # otherwise, we want the next raid (today if command sent before 18h, next one (can be in X days) if sent after)
+        else:
+            days = 0 if datetime.now().hour < 18 else 1
+            next_raid_id = raids['raids'][days]['id'] if raids['raids'] else False
+
         if next_raid_id:
+            # set self.date to print it in discord message
             result = self.wowaudit.get_raid(next_raid_id)
+            self.date = self.date if self.date else result['date']
         else:
             result = False
         return result
@@ -78,6 +85,7 @@ class Lineup:
 
 
     def get_lineup(self):
+        """Main method to get and format lineup"""
         next_raid = self.get_next_raid()
 
         if next_raid:
@@ -105,19 +113,21 @@ class Lineup:
             return result
 
     def set_role_icons(self, role):
+        """Set symbols and text formatting based on role"""
         if role == "Tank":
-            role = f"🛡️  {role}"
+            role = f"🛡️  **{role}**"
         if role == "Heal":
-            role = f"🩹  {role}"
+            role = f"🩹  **{role}**"
         if role == "Melee":
-            role = f"⚔️  {role}"
+            role = f"⚔️  **{role}**"
         if role == "Ranged":
-            role = f"🏹  {role}"
+            role = f"🏹  **{role}**"
         if role == "Backups":
-            role = f"🔄  {role}"
+            role = f"🔄  **{role}**"
         return role
 
     def format_lineup(self, all_selected):
+        """Create the embed that will be shown on discord"""
         nb_encounters = len(all_selected)
         res = discord.Embed(
             title=f"Lineup du {self.date}",
@@ -133,7 +143,7 @@ class Lineup:
                         string_roles += f"\n> <@{player}>"
                 string_total += f"\n{string_roles}"
                 if encounter['note']:
-                    string_total += f"\n> \n> ℹ️  Note\n> {encounter['note']}"
+                    string_total += f"\n> \n> ℹ️  **Note**\n> {encounter['note']}"
                 res.add_field(name=encounter_name, value=string_total, inline=True)
             else:
                 for role, players in encounter['lineup'].items():
@@ -142,28 +152,29 @@ class Lineup:
                         string_players += f"\n> <@{player}>"
                     res.add_field(name=self.set_role_icons(role), value=string_players, inline=True)
 
-                res.add_field(name="ℹ️  Note", value=encounter['note'], inline=True)
+                res.add_field(name="ℹ️  **Note**", value=encounter['note'], inline=True)
 
         return res
 
-
     def format_notes(self, notes):
+        """Remove html tags from notes"""
         html_free_notes = re.sub(r"<[^<]+?>", "", notes)
         return html_free_notes
 
     def find_backups(self, selection):
+        """Return discord ids from backups found on the note"""
         note = self.format_notes(selection['note'])
         backup_string = re.search(r"Backups\s*:\s*(.+)", note)
+        selection['lineup']['Backups'] = []
         if backup_string:
             backup_players = backup_string.group(1).split(", ")
             selection['lineup']['Backups'] = self.find_discord_ids_by_name(names=backup_players)
-            # now we h ave backups registered, remove the bakcups part of the note
+            # now we have backups registered, remove the backups part of the note
         selection['note'] = re.sub(r"Backups\s*:\s*(.+)", "", note)
         return selection
 
-
-
     def find_backups_bobby(self, text, roster):
+        """Legacy method"""
         missing_backup_note = 0
         backup_string = re.findall(r"^Backups:(.*)", text)
         backups = []
@@ -184,6 +195,7 @@ class Lineup:
         return missing_backup_note, discord_string
 
     def get_lineup_bobby(self, date = False):
+        """Legacy method"""
         errors = []
 
         wowaudit = api.wowaudit.WowAudit()
