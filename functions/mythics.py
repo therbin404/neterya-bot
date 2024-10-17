@@ -67,15 +67,15 @@ class Mythics:
         if string_players_done:
             res.add_field(name="✅", value=string_players_done, inline=True)
         if string_players_done_2:
-            res.add_field(name="✅ (2)", value=string_players_done_2, inline=True)
+            res.add_field(name="✅", value=string_players_done_2, inline=True)
 
         if string_players_done_wrong:
             res.add_field(name="⚠️", value=string_players_done_wrong, inline=True)
         if string_players_done_wrong_2:
-            res.add_field(name="⚠️ (2)", value=string_players_done_wrong_2, inline=True)
+            res.add_field(name="⚠️", value=string_players_done_wrong_2, inline=True)
 
         if string_players_not_done:
             res.add_field(name="❌", value=string_players_not_done, inline=True)
         if string_players_not_done_2:
-            res.add_field(name="❌ (2)", value=string_players_not_done_2, inline=True)
+            res.add_field(name="❌", value=string_players_not_done_2, inline=True)
         return res
