@@ -1,6 +1,7 @@
 import api
 import discord
 import re
+import unicodedata
 from datetime import datetime
 from datetime import timedelta
 from itertools import groupby
@@ -15,7 +16,12 @@ class Lineup:
         self.date = date
         self.include_past = True if (self.date and self.date < datetime.now().strftime('%Y-%m-%d')) else False
         self.wowaudit = api.wowaudit.WowAudit()
+
         self.roster = self.wowaudit.get_roster()
+        # we gonna sanitize player names to avoid differences in capital letters or accents later
+        for player in self.roster:
+            player['name'] = self.sanitize_string(player['name'])
+
         self.mapped_char_discord = self.map_char_discord()
         self.lineup = self.get_lineup()
 
@@ -62,6 +68,13 @@ class Lineup:
 
         return encounter_selections
 
+    def sanitize_string(self, string):
+        """Remove all accents and lower string"""
+        nfkd_form = unicodedata.normalize('NFKD', string)
+        only_ascii = nfkd_form.encode('ASCII', 'ignore')
+        decoded = only_ascii.decode("utf-8")
+        return decoded.lower()
+
     def find_discord_ids_by_name(self, names):
         """Find discord id with names as a list"""
         discord_ids = []
@@ -72,6 +85,8 @@ class Lineup:
     def find_discord_id(self, character_id=False, name=False):
         """Find the discord id based on character id or name"""
         if name:
+            # we sanitize the player to avoid differences in capital letters or accents
+            name = self.sanitize_string(name)
             # TODO : Add exception if name not found
             character_id = [item.get('id') for item in self.roster if item.get('name') == name]
             character_id = character_id[0] if character_id else False
@@ -141,9 +156,10 @@ class Lineup:
                     string_roles += f"\n> \n> {self.set_role_icons(role)} :"
                     for player in players:
                         string_roles += f"\n> <@{player}>"
-                string_total += f"\n{string_roles}"
-                if encounter['note']:
-                    string_total += f"\n> \n> ℹ️  **Note**\n> {encounter['note']}"
+                string_total += f"\n{string_roles}\n> \n> ℹ️  **Note**\n"
+                # Note can be empty on screen and have some line breaks, due to backups string remove
+                if encounter['note'] and not all(char == "\n" for char in encounter['note']):
+                    string_total += f"> {encounter['note']}"
                 res.add_field(name=encounter_name, value=string_total, inline=True)
             else:
                 for role, players in encounter['lineup'].items():
