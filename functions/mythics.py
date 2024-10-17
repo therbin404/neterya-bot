@@ -31,6 +31,14 @@ class Mythics:
         """Embed fields on discord accept up to 1024 chars, so we gonna take a safety margin"""
         return True if len(string) > 824 else False
 
+    def handle_discord_strings(self, character, string_to_apply, string_list, string_list_overflow):
+        final_character_string = f"\n> **{character}**\n> *({string_to_apply})*"
+        if self.is_too_long("".join(string_list)):
+            string_list_overflow.append(final_character_string)
+        else:
+            string_list.append(final_character_string)
+
+
     def format_mythics_done(self, week, min_lvl, show_all_chests):
         """Handle and format datas"""
         raw_mythics_done = self.get_mythics_done()
@@ -39,9 +47,15 @@ class Mythics:
             description=f"{week.capitalize()} week \>= {str(min_lvl)}",
             color=discord.Colour.blurple(),
         )
-        string_players_done = string_players_done_2 = string_players_done_wrong = string_players_done_wrong_2 = string_players_not_done = string_players_not_done_2 = ""
+        string_players_done = []
+        string_players_done_overflow = []
+        string_players_done_wrong = []
+        string_players_done_wrong_overflow = []
+        string_players_not_done = []
+        string_players_not_done_overflow = []
         for character, levels_done in raw_mythics_done.items():
             number_done = len(levels_done)
+            string_to_apply = "No mythics done"
             if levels_done:
                 string_to_apply = f"Bonus 1: {str(levels_done[0])}"
                 if number_done > 3:
@@ -49,33 +63,24 @@ class Mythics:
                     if number_done > 7 and show_all_chests:
                         string_to_apply += f", Bonus 8: {str(levels_done[7])}"
                     if levels_done[3] >= int(min_lvl):
-                        if self.is_too_long(string_players_done):
-                            string_players_done_2 += f"\n> **{character}**\n> *({string_to_apply})*"
-                        else:
-                            string_players_done += f"\n> **{character}**\n> *({string_to_apply})*"
+                        self.handle_discord_strings(character, string_to_apply, string_players_done, string_players_done_overflow)
                 else:
-                    if self.is_too_long(string_players_done_wrong):
-                        string_players_done_wrong_2 += f"\n> **{character}**\n> *({string_to_apply})*"
-                    else:
-                        string_players_done_wrong += f"\n> **{character}**\n> *({string_to_apply})*"
+                    self.handle_discord_strings(character, string_to_apply, string_players_done_wrong, string_players_done_wrong_overflow)
             else:
-                if self.is_too_long(string_players_not_done):
-                    string_players_not_done_2 += f"\n> **{character}**\n> *(No mythics done)*"
-                else:
-                    string_players_not_done += f"\n> **{character}**\n> *(No mythics done)*"
+                self.handle_discord_strings(character, string_to_apply, string_players_not_done, string_players_not_done_overflow)
 
-        if string_players_done:
-            res.add_field(name="✅", value=string_players_done, inline=True)
-        if string_players_done_2:
-            res.add_field(name="✅", value=string_players_done_2, inline=True)
+        fields_to_return = [
+            ("✅", string_players_done, string_players_done_overflow),
+            ("⚠️", string_players_done_wrong, string_players_done_wrong_overflow),
+            ("❌", string_players_not_done, string_players_not_done_overflow),
+        ]
 
-        if string_players_done_wrong:
-            res.add_field(name="⚠️", value=string_players_done_wrong, inline=True)
-        if string_players_done_wrong_2:
-            res.add_field(name="⚠️", value=string_players_done_wrong_2, inline=True)
+        for icon, string_value, string_overflow in fields_to_return:
+            if string_value:
+                value_to_return = "".join(string_value)
+                res.add_field(name=icon, value=value_to_return, inline=True)
+            if string_overflow:
+                value_to_return = "".join(string_overflow)
+                res.add_field(name=icon, value=value_to_return, inline=True)
 
-        if string_players_not_done:
-            res.add_field(name="❌", value=string_players_not_done, inline=True)
-        if string_players_not_done_2:
-            res.add_field(name="❌", value=string_players_not_done_2, inline=True)
         return res

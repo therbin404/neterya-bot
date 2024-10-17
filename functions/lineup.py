@@ -6,6 +6,32 @@ from datetime import datetime
 from datetime import timedelta
 from itertools import groupby
 
+def sanitize_string(string):
+    """Remove all accents and lower string"""
+    nfkd_form = unicodedata.normalize('NFKD', string)
+    only_ascii = nfkd_form.encode('ASCII', 'ignore')
+    decoded = only_ascii.decode("utf-8")
+    return decoded.lower()
+
+def set_role_icons(role):
+    """Set symbols and text formatting based on role"""
+    if role == "Tank":
+        role = f"🛡️  **{role}**"
+    if role == "Heal":
+        role = f"🩹  **{role}**"
+    if role == "Melee":
+        role = f"⚔️  **{role}**"
+    if role == "Ranged":
+        role = f"🏹  **{role}**"
+    if role == "Backups":
+        role = f"🔄  **{role}**"
+    return role
+
+def format_notes(notes):
+    """Remove html tags from notes"""
+    html_free_notes = re.sub(r"<[^<]+?>", "", notes)
+    return html_free_notes
+
 class Lineup:
 
     mapped_char_discord = []
@@ -20,7 +46,7 @@ class Lineup:
         self.roster = self.wowaudit.get_roster()
         # we gonna sanitize player names to avoid differences in capital letters or accents later
         for player in self.roster:
-            player['name'] = self.sanitize_string(player['name'])
+            player['name'] = sanitize_string(player['name'])
 
         self.mapped_char_discord = self.map_char_discord()
         self.lineup = self.get_lineup()
@@ -28,7 +54,6 @@ class Lineup:
     def get_next_raid(self):
         """Get the next raid based on date"""
         raids = self.wowaudit.get_raids(self.include_past)
-        print(raids)
 
         now = datetime.now()
 
@@ -68,13 +93,6 @@ class Lineup:
 
         return encounter_selections
 
-    def sanitize_string(self, string):
-        """Remove all accents and lower string"""
-        nfkd_form = unicodedata.normalize('NFKD', string)
-        only_ascii = nfkd_form.encode('ASCII', 'ignore')
-        decoded = only_ascii.decode("utf-8")
-        return decoded.lower()
-
     def find_discord_ids_by_name(self, names):
         """Find discord id with names as a list"""
         discord_ids = []
@@ -86,7 +104,7 @@ class Lineup:
         """Find the discord id based on character id or name"""
         if name:
             # we sanitize the player to avoid differences in capital letters or accents
-            name = self.sanitize_string(name)
+            name = sanitize_string(name)
             # TODO : Add exception if name not found
             character_id = [item.get('id') for item in self.roster if item.get('name') == name]
             character_id = character_id[0] if character_id else False
@@ -127,20 +145,6 @@ class Lineup:
             result = self.format_lineup(all_selected)
             return result
 
-    def set_role_icons(self, role):
-        """Set symbols and text formatting based on role"""
-        if role == "Tank":
-            role = f"🛡️  **{role}**"
-        if role == "Heal":
-            role = f"🩹  **{role}**"
-        if role == "Melee":
-            role = f"⚔️  **{role}**"
-        if role == "Ranged":
-            role = f"🏹  **{role}**"
-        if role == "Backups":
-            role = f"🔄  **{role}**"
-        return role
-
     def format_lineup(self, all_selected):
         """Create the embed that will be shown on discord"""
         nb_encounters = len(all_selected)
@@ -153,7 +157,7 @@ class Lineup:
             if nb_encounters > 1:
                 string_total = string_roles = ""
                 for role, players in encounter['lineup'].items():
-                    string_roles += f"\n> \n> {self.set_role_icons(role)} :"
+                    string_roles += f"\n> \n> {set_role_icons(role)} :"
                     for player in players:
                         string_roles += f"\n> <@{player}>"
                 string_total += f"\n{string_roles}\n> \n> ℹ️  **Note**\n"
@@ -166,20 +170,15 @@ class Lineup:
                     string_players = ""
                     for player in players:
                         string_players += f"\n> <@{player}>"
-                    res.add_field(name=self.set_role_icons(role), value=string_players, inline=True)
+                    res.add_field(name=set_role_icons(role), value=string_players, inline=True)
 
                 res.add_field(name="ℹ️  **Note**", value=encounter['note'], inline=True)
 
         return res
 
-    def format_notes(self, notes):
-        """Remove html tags from notes"""
-        html_free_notes = re.sub(r"<[^<]+?>", "", notes)
-        return html_free_notes
-
     def find_backups(self, selection):
         """Return discord ids from backups found on the note"""
-        note = self.format_notes(selection['note'])
+        note = format_notes(selection['note'])
         backup_string = re.search(r"Backups\s*:\s*(.+)", note)
         selection['lineup']['Backups'] = []
         if backup_string:
