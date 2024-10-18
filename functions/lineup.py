@@ -103,7 +103,9 @@ class Lineup:
         """Find discord id with names as a list"""
         discord_ids = []
         for name in names:
-            discord_ids.append(self.find_discord_id(name=name))
+            discord_id = self.find_discord_id(name=name)
+            if discord_id:
+                discord_ids.append(discord_id)
         return discord_ids
 
     def find_discord_id(self, character_id=False, name=False):
