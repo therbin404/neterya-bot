@@ -54,6 +54,7 @@ class Lineup:
     def get_next_raid(self):
         """Get the next raid based on date"""
         raids = self.wowaudit.get_raids(self.include_past)
+        print(raids)
 
         now = datetime.now()
 
@@ -62,8 +63,13 @@ class Lineup:
             next_raid = list(filter(lambda raid: raid['date'] == self.date, raids['raids']))
             next_raid_id = next_raid[0]['id'] if next_raid else False
         # otherwise, we want the next raid (today if command sent before 18h, next one (can be in X days) if sent after)
+        # sent before 18h a day of raid : select first upcoming raid
+        # sent after 18h a day of raid : select second upcoming raid
+        # sent some days before the next raid : select first upcoming raid
         else:
-            days = 0 if datetime.now().hour < 18 else 1
+            now = datetime.now()
+            raid_tonight = raids['raids'][0]['date'] == now.strftime('%Y-%m-%d') if raids['raids'] else False
+            days = 1 if (now.hour > 18 and raid_tonight) else 0
             next_raid_id = raids['raids'][days]['id'] if raids['raids'] else False
 
         if next_raid_id:
