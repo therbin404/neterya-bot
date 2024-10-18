@@ -38,6 +38,8 @@ load_dotenv()
 
 bot = discord.Bot()
 
+error_msg = f"Ni !\n\n **Use the force, Harry**\n *-Gandalf* \n\n"
+
 @bot.slash_command(name="lineup")
 async def lineup(
     ctx: discord.ApplicationContext, 
@@ -48,7 +50,7 @@ async def lineup(
         Lineup = functions.lineup.Lineup(date)
         await ctx.followup.send(embed=Lineup.lineup)
     except Exception as e:
-        await ctx.followup.send(f"Oops, something went wrong ! Try to use the force, Luke !\n({e})")
+        await ctx.followup.send(f"{error_msg}({e})")
 
 @bot.slash_command(name="mythics")
 async def mythics_command(
@@ -66,7 +68,7 @@ async def mythics_command(
         Mythics = functions.mythics.Mythics(week, level, show_all_chests)
         await ctx.followup.send(embed=Mythics.mythics_done)
     except Exception as e:
-        await ctx.followup.send(f"Oops, something went wrong ! Try to use the force, Luke !\n({e})")
+        await ctx.followup.send(f"{error_msg}({e})")
 
 @bot.event
 async def on_ready():

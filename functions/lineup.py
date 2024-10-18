@@ -54,13 +54,14 @@ class Lineup:
     def get_next_raid(self):
         """Get the next raid based on date"""
         raids = self.wowaudit.get_raids(self.include_past)
-        print(raids)
 
         now = datetime.now()
 
         # if we have a date, we want the raid with that date
         if self.date:
             next_raid = list(filter(lambda raid: raid['date'] == self.date, raids['raids']))
+            if not next_raid:
+                raise Exception(f"There is no raid at {self.date}")
             next_raid_id = next_raid[0]['id'] if next_raid else False
         # otherwise, we want the next raid (today if command sent before 18h, next one (can be in X days) if sent after)
         # sent before 18h a day of raid : select first upcoming raid
@@ -69,19 +70,19 @@ class Lineup:
         else:
             now = datetime.now()
             raid_tonight = raids['raids'][0]['date'] == now.strftime('%Y-%m-%d') if raids['raids'] else False
-            days = 1 if (now.hour > 18 and raid_tonight) else 0
+            # also check if there are multiple upcoming raids upcoming raids
+            days = 1 if (now.hour > 18 and raid_tonight) and not len(raids['raids']) == 1 else 0
             next_raid_id = raids['raids'][days]['id'] if raids['raids'] else False
 
         if next_raid_id:
             # set self.date to print it in discord message
             result = self.wowaudit.get_raid(next_raid_id)
             self.date = self.date if self.date else result['date']
-        else:
-            result = False
-        return result
+            return result
+        raise Exception("There is no upcoming raid")
 
 
-    def get_selected_players(self, selections, all=False):
+    def get_selected_players(self, selections, all_raid=False):
         """Returns a dict that contains all discord ids selected grouped by role
         
         e.g: {'Ulgrax': {'Ranged': [39057542431234]}, 'The Bloodbound Horror': {'Ranged': [390575423443, 51919515234234], 'Melee': [51203698123213]}}"""
@@ -92,7 +93,7 @@ class Lineup:
         roles_grouped = groupby(sorted_selections, lambda x: x['role'])
         
         for role, players in roles_grouped:
-            encounter_selections[role] = [player.get('character').get('id') for player in players if player.get('selected')] if all else [player.get('character_id') for player in players if player.get('selected')]
+            encounter_selections[role] = [player.get('character').get('id') for player in players if player.get('selected')] if all_raid else [player.get('character_id') for player in players if player.get('selected')]
 
             for index, character_id in enumerate(encounter_selections[role]):
                 encounter_selections[role][index] = self.find_discord_id(character_id)
@@ -115,6 +116,8 @@ class Lineup:
             name = sanitize_string(name)
             # TODO : Add exception if name not found
             character_id = [item.get('id') for item in self.roster if item.get('name') == name]
+            if not character_id:
+                raise Exception(f"The ID of the player {name} was not found")
             character_id = character_id[0] if character_id else False
 
         return ''.join([item.get(character_id) for item in self.mapped_char_discord if item.get(character_id)])
@@ -142,8 +145,8 @@ class Lineup:
                     }
 
             if not activated_encounters:
-                all_selected['All'] = {
-                    'lineup': self.get_selected_players(next_raid['signups'], all=True),
+                all_selected['All raid'] = {
+                    'lineup': self.get_selected_players(next_raid['signups'], all_raid=True),
                     'note': next_raid['notes'] if next_raid['notes'] else ""
                     }
 

@@ -23,7 +23,7 @@ class Mythics:
             mythics_done, week_parameter = raiderio.get_mythics_done(realm, name, self.week)
 
             # associate 'player name' key to 'level of mythics done' value for datas returned by the api
-            roster_mythics_done[character['name']] = [mythic_done['mythic_level'] for mythic_done in mythics_done[week_parameter]]
+            roster_mythics_done[name] = [mythic_done['mythic_level'] for mythic_done in mythics_done[week_parameter]]
 
         return roster_mythics_done
 
