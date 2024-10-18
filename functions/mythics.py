@@ -3,11 +3,11 @@ import discord
 
 class Mythics:
 
-    def __init__(self, week, min_level, show_all_chests):
+    def __init__(self, week, min_level, show_third_chest):
         self.week = week
-        self.min_level = min_level
-        show_all_chests = True if show_all_chests == 'yes' else False
-        self.mythics_done = self.format_mythics_done(week, min_level, show_all_chests)
+        self.min_level = min_level or 10
+        show_third_chest = True if show_third_chest == 'yes' else False
+        self.mythics_done = self.format_mythics_done(week, min_level, show_third_chest)
 
     def get_mythics_done(self):
         """Get all mythics done informations from wowaudit and raider.io"""
@@ -39,7 +39,7 @@ class Mythics:
             string_list.append(final_character_string)
 
 
-    def format_mythics_done(self, week, min_lvl, show_all_chests):
+    def format_mythics_done(self, week, min_lvl, show_third_chest):
         """Handle and format datas"""
         raw_mythics_done = self.get_mythics_done()
         res = discord.Embed(
@@ -60,7 +60,7 @@ class Mythics:
                 string_to_apply = f"Bonus 1: {str(levels_done[0])}"
                 if number_done > 3:
                     string_to_apply += f", Bonus 4: {str(levels_done[3])}"
-                    if number_done > 7 and show_all_chests:
+                    if number_done > 7 and show_third_chest:
                         string_to_apply += f", Bonus 8: {str(levels_done[7])}"
                     if levels_done[3] >= int(min_lvl):
                         self.handle_discord_strings(character, string_to_apply, string_players_done, string_players_done_overflow)
