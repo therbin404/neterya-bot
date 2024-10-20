@@ -8,7 +8,11 @@ load_dotenv()
 
 bot = discord.Bot()
 
-error_msg = f"Ni !\n\n **Use the force, Harry**\n *-Gandalf* \n\n"
+file = discord.File("./borderlands-claptrap.gif", filename="borderlands-claptrap.gif")
+embed_error = discord.Embed(
+            title=f"Erreur !",
+            )
+embed_error.set_image(url="attachment://borderlands-claptrap.gif")
 
 @bot.slash_command(name="help")
 async def help(
@@ -20,7 +24,8 @@ async def help(
         Helper = functions.helper.Helper(section)
         await ctx.followup.send(embed=Helper.helper)
     except Exception as e:
-        await ctx.followup.send(f"{error_msg}({e})")
+        embed_error.description=str(e)
+        await ctx.followup.send(file=file, embed=embed_error)
 
 @bot.slash_command(name="lineup")
 async def lineup(
@@ -32,7 +37,8 @@ async def lineup(
         Lineup = functions.lineup.Lineup(date)
         await ctx.followup.send(embed=Lineup.lineup)
     except Exception as e:
-        await ctx.followup.send(f"{error_msg}({e})")
+        embed_error.description=str(e)
+        await ctx.followup.send(file=file, embed=embed_error)
 
 @bot.slash_command(name="mythics")
 async def mythics_command(
@@ -50,7 +56,8 @@ async def mythics_command(
         Mythics = functions.mythics.Mythics(week, level, show_third_chest)
         await ctx.followup.send(embed=Mythics.mythics_done)
     except Exception as e:
-        await ctx.followup.send(f"{error_msg}({e})")
+        embed_error.description=str(e)
+        await ctx.followup.send(file=file, embed=embed_error)
 
 @bot.event
 async def on_ready():
