@@ -15,13 +15,13 @@ def sanitize_string(string):
 
 def set_role_icons(role):
     """Set symbols and text formatting based on role"""
-    if role == "Tank":
+    if role == "Tanks":
         role = f"🛡️  **{role}**"
-    if role == "Heal":
+    if role == "Heals":
         role = f"🩹  **{role}**"
-    if role == "Melee":
+    if role == "Cacs":
         role = f"⚔️  **{role}**"
-    if role == "Ranged":
+    if role == "Distants":
         role = f"🏹  **{role}**"
     if role == "Backups":
         role = f"🔄  **{role}**"
@@ -61,7 +61,7 @@ class Lineup:
         if self.date:
             next_raid = list(filter(lambda raid: raid['date'] == self.date, raids['raids']))
             if not next_raid:
-                raise Exception(f"There is no raid at {self.date}")
+                raise Exception(f"Aucun raid trouvé le {self.date}.")
             next_raid_id = next_raid[0]['id'] if next_raid else False
         # otherwise, we want the next raid (today if command sent before 18h, next one (can be in X days) if sent after)
         # sent before 18h a day of raid : select first upcoming raid
@@ -79,7 +79,7 @@ class Lineup:
             result = self.wowaudit.get_raid(next_raid_id)
             self.date = self.date if self.date else result['date']
             return result
-        raise Exception("There is no upcoming raid")
+        raise Exception("Aucun raid à venir.")
 
 
     def get_selected_players(self, selections, all_raid=False):
@@ -117,7 +117,7 @@ class Lineup:
             # TODO : Add exception if name not found
             character_id = [item.get('id') for item in self.roster if item.get('name') == name]
             if not character_id:
-                raise Exception(f"The ID of the player {name} was not found")
+                raise Exception(f"L'ID du joueur {name} n'a pas été trouvé.")
             character_id = character_id[0] if character_id else False
 
         return ''.join([item.get(character_id) for item in self.mapped_char_discord if item.get(character_id)])

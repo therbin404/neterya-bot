@@ -5,8 +5,8 @@ class Mythics:
 
     def __init__(self, week, min_level, show_third_chest):
         self.week = week
-        self.min_level = min_level or 10
-        show_third_chest = True if show_third_chest == 'yes' else False
+        min_level = min_level if min_level else 10
+        show_third_chest = True if show_third_chest == 'oui' else False
         self.mythics_done = self.format_mythics_done(week, min_level, show_third_chest)
 
     def get_mythics_done(self):
@@ -43,8 +43,8 @@ class Mythics:
         """Handle and format datas"""
         raw_mythics_done = self.get_mythics_done()
         res = discord.Embed(
-            title=f"Mythics done",
-            description=f"{week.capitalize()} week \>= {str(min_lvl)}",
+            title=f"Mythiques + terminés",
+            description=f"Semaine {week.capitalize()} \>= {str(min_lvl)}",
             color=discord.Colour.blurple(),
         )
         string_players_done = []
@@ -55,15 +55,20 @@ class Mythics:
         string_players_not_done_overflow = []
         for character, levels_done in raw_mythics_done.items():
             number_done = len(levels_done)
-            string_to_apply = "No mythics done"
+            string_to_apply = "Aucune mythique + validée"
             if levels_done:
                 string_to_apply = f"Bonus 1: {str(levels_done[0])}"
                 if number_done > 3:
                     string_to_apply += f", Bonus 4: {str(levels_done[3])}"
-                    if number_done > 7 and show_third_chest:
-                        string_to_apply += f", Bonus 8: {str(levels_done[7])}"
+                    if show_third_chest:
+                        third_bonus = "/"
+                        if number_done > 7:
+                            third_bonus = str(levels_done[7])
+                        string_to_apply += f", Bonus 8: {third_bonus}"
                     if levels_done[3] >= int(min_lvl):
                         self.handle_discord_strings(character, string_to_apply, string_players_done, string_players_done_overflow)
+                    else:
+                        self.handle_discord_strings(character, string_to_apply, string_players_done_wrong, string_players_done_wrong_overflow)
                 else:
                     self.handle_discord_strings(character, string_to_apply, string_players_done_wrong, string_players_done_wrong_overflow)
             else:

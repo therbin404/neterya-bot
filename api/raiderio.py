@@ -8,7 +8,7 @@ class RaiderIO:
             }
 
     def get_mythics_done(self, realm, name, week):
-        week_parameter = 'mythic_plus_previous_weekly_highest_level_runs' if week == 'last' else 'mythic_plus_weekly_highest_level_runs'
+        week_parameter = 'mythic_plus_previous_weekly_highest_level_runs' if week == 'passée' else 'mythic_plus_weekly_highest_level_runs'
 
         result = requests.get('https://raider.io/api/v1/characters/profile?region=eu&realm=%s&name=%s&fields=%s' % (realm, name, week_parameter), headers=self.rio_headers)
         mythics_done = result.json()
